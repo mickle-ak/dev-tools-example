@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.0.3'
     id 'io.spring.dependency-management' version '1.1.7'
+    id "net.ltgt.errorprone" version "5.1.0"
 }
 
 group = 'org.mickleak'
@@ -25,20 +26,57 @@ repositories {
 }
 
 dependencies {
+    // spring
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-flyway'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-actuator-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.h2database:h2'
+    // lombok
+    compileOnly 'org.projectlombok:lombok:1.18.44'
+    annotationProcessor 'org.projectlombok:lombok:1.18.44'
+    testCompileOnly 'org.projectlombok:lombok:1.18.44'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.44'
+    // MapStruct
+    implementation 'org.mapstruct:mapstruct:1.6.3'
+    implementation "org.projectlombok:lombok-mapstruct-binding:0.2.0"
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+    // nullaway
+    errorprone "com.uber.nullaway:nullaway:0.13.1"
+    errorprone "com.google.errorprone:error_prone_core:2.48.0"
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+
+import net.ltgt.gradle.errorprone.CheckSeverity
+
+tasks.withType(JavaCompile).configureEach  {
+    options.errorprone {
+        // configure NullAway plugin of Error Prone
+        check("NullAway", CheckSeverity.ERROR)
+        option("NullAway:AnnotatedPackages", "org.mickleak")
+//        option("NullAway:AnnotatedPackages", "org.mickleak.devtoolsexamples.domain") // to start with domain objects only
+        option("NullAway:KnownInitializers", "lombok.Builder,javax.annotation.PostConstruct")
+        option("NullAway:ExcludedFieldAnnotations", "org.springframework.beans.factory.annotation.Autowired") // excluded Autowired fields
+        option("NullAway:TreatGeneratedAsUnannotated", "true") // excluded classes marked as @Generated
+        option("NullAway:AcknowledgeRestrictiveAnnotations", "true") // strictly check for (third-party) unannotated code
+        option("NullAway:CheckOptionalEmptiness", "true") // strictly check for Optional.get
+        // calm down Error Prone itself
+        allErrorsAsWarnings = true
+        disableWarningsInGeneratedCode = true
+    }
+    // Include to disable NullAway on test code
+    if (name.toLowerCase().contains("test")) {
+        options.errorprone {
+            disable("NullAway")
+        }
+    }
 }

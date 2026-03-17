@@ -7,6 +7,7 @@ build/
 
 ### STS ###
 .apt_generated
+.apt_generated_tests
 .classpath
 .factorypath
 .project
@@ -16,7 +17,6 @@ build/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
-.apt_generated_tests/
 
 ### IntelliJ IDEA ###
 .idea
@@ -36,4 +36,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### AI ###
+/.claude/settings.local.json
 
